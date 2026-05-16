@@ -2,6 +2,8 @@ package com.senai.clinica_api.services;
 
 import com.senai.clinica_api.dtos.PacienteDto;
 import com.senai.clinica_api.entitys.PacienteEntity;
+import com.senai.clinica_api.entitys.StatusConsulta;
+import com.senai.clinica_api.repositorys.ConsultaRepository;
 import com.senai.clinica_api.repositorys.PacienteRepository;
 import org.springframework.stereotype.Service;
 
@@ -12,9 +14,14 @@ import java.util.Optional;
 @Service
 public class PacienteService {
 
-    private PacienteRepository pacienteRepository;
-    public PacienteService(PacienteRepository pacienteRepository) {this.pacienteRepository = pacienteRepository;}
 
+    private PacienteRepository pacienteRepository;
+    private ConsultaRepository consultaRepository;
+
+    public PacienteService(PacienteRepository pacienteRepository, ConsultaRepository consultaRepository) {
+        this.pacienteRepository = pacienteRepository;
+        this.consultaRepository = consultaRepository;
+    }
 
     //Listar Pacientes
     public List<PacienteDto> obterPacientes() {
@@ -80,5 +87,25 @@ public class PacienteService {
     }
 
 
+
+    //Excluir paciente
+    public boolean excluirPaciente(String email) {
+
+        Optional<PacienteEntity> pacienteEntity = pacienteRepository.findByEmail(email);
+
+        if (pacienteEntity.isEmpty()) {
+            return false;
+        }
+
+        PacienteEntity paciente = pacienteEntity.get();
+
+        boolean existeConsulta = consultaRepository.existsByPaciente_EmailAndStatusConsulta(email, StatusConsulta.EM_ANDAMENTO);
+        if (existeConsulta){
+            throw new RuntimeException("consulta em aberta");
+        }
+
+        pacienteRepository.delete(paciente);
+        return true;
+    }
 
 }
